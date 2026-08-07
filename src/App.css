@@ -1,17 +1,20 @@
 .app-shell {
-  width: min(1240px, calc(100% - 72px));
-  margin: 40px auto 70px;
+  width: min(1240px, calc(100% - 120px));
+  margin: 72px auto 96px;
 }
 
 .page-header {
-  margin-bottom: 28px;
+  margin-bottom: 34px;
 }
 
 .page-header h1 {
   margin: 0;
   color: var(--brand);
-  font: 400 68px/1.08 Helvetica, "Helvetica Neue", Arial, sans-serif;
-  letter-spacing: 0.01em;
+  font-family: "Helvetica Neue LT W05_35 Thin", Helvetica, Arial, sans-serif;
+  font-size: 48px;
+  font-weight: 200;
+  letter-spacing: 0.04em;
+  line-height: 60px;
 }
 
 .filter-strip {
@@ -38,14 +41,14 @@
   border: 0;
   padding: 0 18px;
   background: #f3f7fb;
-  color: var(--brand);
+  color: var(--brand-dark);
   font: 700 15px/1 Helvetica, "Helvetica Neue", Arial, sans-serif;
   cursor: pointer;
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .tab.active {
-  background: var(--brand);
+  background: var(--brand-dark);
   color: #fff;
 }
 
@@ -111,7 +114,7 @@
   height: 46px;
   border: 0;
   border-radius: 999px;
-  background: var(--brand);
+  background: var(--brand-dark);
   color: #fff;
   padding: 0 22px;
   font-size: 17px;
@@ -121,33 +124,32 @@
 }
 
 .clear-button:hover {
-  background: var(--brand-dark);
+  background: var(--brand);
 }
 
 .results-grid {
   margin-top: 26px;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
+  gap: 16px;
 }
 
 .property-card {
   background: var(--white);
   border: 1px solid var(--line);
   border-radius: 0;
-  box-shadow: none;
-  padding: 18px 18px 16px;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  min-height: 330px;
-  cursor: pointer;
-  transition: border-color 0.2s ease, transform 0.15s ease;
+  min-height: 0;
 }
 
-.property-card:hover {
-  border-color: #b8cfe0;
-  transform: translateY(-1px);
+.card-main {
+  padding: 18px 22px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 275px;
 }
 
 .property-card-head {
@@ -159,81 +161,108 @@
 
 .property-card h2 {
   margin: 0;
-  color: #0e2a4a;
-  font-size: 20px;
-  line-height: 1.2;
-  font-weight: 500;
+  color: #0b1b3a;
   font-family: "Museo Slab W01_500", Georgia, "Times New Roman", Times, Serif;
+  font-size: 24px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.2;
 }
 
 .compare-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: #60758e;
-  font-size: 15px;
-  font-weight: 600;
-}
-
-.compare-link svg {
-  font-size: 18px;
+  display: none;
 }
 
 .price-line {
-  margin: 0;
-  color: #0f243f;
-  font-size: 15px;
+  margin: 2px 0 0;
+  color: #0b1b3a;
+  font-family: "Helvetica Neue LT W05_65 Medium", Helvetica, Arial, sans-serif;
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 28px;
+}
+
+.price-label {
+  font-family: "Helvetica Neue LT W05_55 Roman", Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 24px;
+  color: #0b1b3a;
 }
 
 .price-line strong {
   color: var(--brand);
-  font-size: 44px;
-  font-weight: 700;
-  line-height: 1;
+  font: inherit;
+  font-weight: 500;
 }
 
-.location-line {
+.location-line,
+.title-status {
   margin: 0;
   color: #5a6f86;
-  font-size: 15px;
-  line-height: 1.42;
+  font-family: "Helvetica Neue LT W05_55 Roman", Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 24px;
 }
 
 .title-status {
-  margin: 0;
-  color: #516780;
-  font-size: 14px;
-  line-height: 1.4;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .inline-info {
-  font-size: 14px;
+  font-size: 16px;
   color: #8ca2b9;
 }
 
 .detail-icons {
+  margin-top: auto;
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 8px;
-  margin-top: auto;
-  color: #243d57;
-  font-size: 13px;
+  color: #213b57;
 }
 
 .detail-icons span {
   display: inline-flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 3px;
+  gap: 4px;
+  font-size: 13px;
+  line-height: 1.1;
   white-space: nowrap;
 }
 
 .detail-icons svg {
   color: #17324a;
   font-size: 16px;
+}
+
+.card-footer {
+  border-top: 1px solid var(--line);
+  background: #edf3f8;
+  padding: 12px 22px;
+}
+
+.view-package {
+  border: 0;
+  border-radius: 999px;
+  background: var(--brand-dark);
+  color: #fff;
+  padding: 10px 24px;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: Helvetica, "Helvetica Neue", Arial, sans-serif;
+  cursor: pointer;
+}
+
+.view-package:hover {
+  background: var(--brand);
 }
 
 .empty-state {
@@ -351,11 +380,12 @@
 @media (max-width: 900px) {
   .app-shell {
     width: calc(100% - 26px);
-    margin-top: 20px;
+    margin-top: 28px;
   }
 
   .page-header h1 {
-    font-size: 44px;
+    font-size: 36px;
+    line-height: 46px;
   }
 
   .filter-strip {
@@ -370,18 +400,38 @@
     margin-top: 18px;
   }
 
-  .property-card {
-    min-height: 300px;
+  .card-main {
+    min-height: 250px;
     padding: 16px;
   }
 
-  .price-line strong {
-    font-size: 34px;
+  .property-card h2 {
+    font-size: 22px;
+  }
+
+  .price-line {
+    font-size: 18px;
+    line-height: 25px;
+  }
+
+  .price-label {
+    font-size: 13px;
+    line-height: 20px;
+  }
+
+  .location-line,
+  .title-status {
+    font-size: 15px;
+    line-height: 22px;
   }
 
   .detail-icons {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 10px;
+  }
+
+  .card-footer {
+    padding: 12px 16px;
   }
 
   .modal-grid {

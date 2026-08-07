@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { FiSearch, FiInfo, FiSquare } from "react-icons/fi";
+import { FiSearch, FiInfo } from "react-icons/fi";
 import {
   FaBed,
   FaBath,
@@ -335,60 +335,61 @@ function App() {
           <article
             className="property-card"
             key={`${property.Lot}-${property.HomeDesign}`}
-            onClick={() => setSelectedProperty(property)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={event => {
-              if (event.key === "Enter" || event.key === " ") {
-                setSelectedProperty(property);
-              }
-            }}
-            aria-label={`Open details for ${property.HomeDesign}`}
           >
-            <header className="property-card-head">
-              <h2>{property.HomeDesign}</h2>
-              <span className="compare-link">
-                <FiSquare aria-hidden="true" />
-                Compare
-              </span>
-            </header>
+            <div className="card-main">
+              <header className="property-card-head">
+                <h2>{property.Suburb}</h2>
+              </header>
 
-            <p className="price-line">
-              Fixed price package{" "}
-              <strong>{currencyFormatter.format(property.TotalPrice)}*</strong>
-            </p>
+              <p className="price-line">
+                <span className="price-label">Fixed price package </span>
+                <strong>
+                  {currencyFormatter.format(property.TotalPrice)}*
+                </strong>
+              </p>
 
-            <p className="location-line">
-              {property.Suburb} ({property.Estate})
-              <br />
-              Lot {property.Lot}
-            </p>
+              <p className="location-line">
+                {property.Suburb} ({property.Estate})
+                <br />
+                Lot {property.Lot}
+              </p>
 
-            <p className="title-status">
-              {property.TitleStatus}{" "}
-              <FiInfo className="inline-info" aria-hidden="true" />
-            </p>
+              <p className="title-status">
+                {property.TitleStatus}{" "}
+                <FiInfo className="inline-info" aria-hidden="true" />
+              </p>
 
-            <div className="detail-icons">
-              <span title="Beds">
-                <FaBed /> {property.Beds}
-              </span>
-              <span title="Baths">
-                <FaBath /> {property.Baths}
-              </span>
-              <span title="Living">
-                <FaCouch /> {property.Living}
-              </span>
-              <span title="Cars">
-                <FaCar /> {property.Cars}
-              </span>
-              <span title="Width">
-                <FaRulerHorizontal /> {property.Width}m
-              </span>
-              <span title="Land size">
-                <FaVectorSquare /> {property.LandSize}m²
-              </span>
+              <div className="detail-icons">
+                <span title="Beds">
+                  <FaBed /> {property.Beds}
+                </span>
+                <span title="Baths">
+                  <FaBath /> {property.Baths}
+                </span>
+                <span title="Living">
+                  <FaCouch /> {property.Living}
+                </span>
+                <span title="Cars">
+                  <FaCar /> {property.Cars}
+                </span>
+                <span title="Width">
+                  <FaRulerHorizontal /> {property.Width}m
+                </span>
+                <span title="Land size">
+                  <FaVectorSquare /> {property.LandSize}m²
+                </span>
+              </div>
             </div>
+
+            <footer className="card-footer">
+              <button
+                type="button"
+                className="view-package"
+                onClick={() => setSelectedProperty(property)}
+              >
+                View package
+              </button>
+            </footer>
           </article>
         ))}
 
