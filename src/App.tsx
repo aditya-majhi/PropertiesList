@@ -33,6 +33,7 @@ type RawPropertyRecord = {
   Baths: string;
   Cars: string;
   Living: string;
+  Link: string;
 };
 
 type PropertyRecord = {
@@ -58,6 +59,7 @@ type PropertyRecord = {
   Baths: number;
   Cars: number;
   Living: number;
+  Link: string;
 };
 
 type SortType = "alphabetical" | "price-low-high" | "price-high-low";
@@ -100,10 +102,14 @@ const normalizeProperty = (item: RawPropertyRecord): PropertyRecord => ({
   Baths: toNumber(item.Baths),
   Cars: toNumber(item.Cars),
   Living: toNumber(item.Living),
+  Link: item.Link,
 });
 
 function App() {
   const [properties, setProperties] = useState<PropertyRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isFiltering, setIsFiltering] = useState(false);
   const [selectedProperty, setSelectedProperty] =
     useState<PropertyRecord | null>(null);
   const [locationMode, setLocationMode] = useState<"suburbs" | "estates">(
@@ -123,8 +129,34 @@ function App() {
       setProperties(data.map(normalizeProperty));
     };
 
-    loadProperties().catch(() => setProperties([]));
+    loadProperties()
+      .catch(() => setProperties([]))
+      .finally(() => setIsLoading(false));
   }, []);
+
+  useEffect(() => {
+    setIsFiltering(true);
+
+    const timeoutId = window.setTimeout(() => {
+      setIsFiltering(false);
+    }, 250);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [
+    areaFilter,
+    bedsFilter,
+    locationMode,
+    locationQuery,
+    sortBy,
+    statusFilter,
+    storeyFilter,
+  ]);
+
+  useEffect(() => {
+    if (locationQuery.trim() !== "") {
+      setIsSearchOpen(true);
+    }
+  }, [locationQuery]);
 
   const areas = useMemo(
     () => ["Any region", ...new Set(properties.map(item => item.Area))],
@@ -200,6 +232,7 @@ function App() {
     setBedsFilter("Any");
     setStatusFilter("Any");
     setSortBy("alphabetical");
+    setIsSearchOpen(false);
   };
 
   const formatModalValue = (key: string, value: string | number) => {
@@ -211,7 +244,25 @@ function App() {
     return value;
   };
 
-  return (
+  if (isLoading) {
+    return (
+      <main className="loading-screen" aria-label="Loading properties">
+        <div className="loading-content">
+          <span className="loading-spinner" aria-hidden="true" />
+          <p>Loading house and land packages...</p>
+        </div>
+      </main>
+    );
+  }
+
+  return isLoading ? (
+    <main className="loading-screen" aria-label="Loading properties">
+      <div className="loading-content">
+        <span className="loading-spinner" aria-hidden="true" />
+        <p>Loading house and land packages...</p>
+      </div>
+    </main>
+  ) : (
     <main className="app-shell">
       <header className="page-header">
         <h1>House &amp; Land Packages in Melbourne</h1>
@@ -224,7 +275,11 @@ function App() {
             role="tab"
             className={locationMode === "suburbs" ? "tab active" : "tab"}
             aria-selected={locationMode === "suburbs"}
-            onClick={() => setLocationMode("suburbs")}
+            onClick={() => {
+              setLocationMode("suburbs");
+              setLocationQuery("");
+              setIsSearchOpen(false);
+            }}
           >
             Suburbs
           </button>
@@ -233,24 +288,99 @@ function App() {
             role="tab"
             className={locationMode === "estates" ? "tab active" : "tab"}
             aria-selected={locationMode === "estates"}
-            onClick={() => setLocationMode("estates")}
+            onClick={() => {
+              setLocationMode("estates");
+              setLocationQuery("");
+              setIsSearchOpen(false);
+            }}
           >
             Estates
           </button>
         </div>
 
-        <label className="search-field" htmlFor="location-query">
-          <span className="filter-label">Location</span>
-          <span className="search-input-wrap">
+        <div className="search-field">
+          <label className="filter-label" htmlFor="location-query">
+            Location
+          </label>
+
+          <div className="search-input-wrap">
             <input
               id="location-query"
               value={locationQuery}
-              onChange={event => setLocationQuery(event.target.value)}
+              onChange={event => {
+                setLocationQuery(event.target.value);
+              }}
               placeholder="Suburb, postcode or estate"
+              autoComplete="off"
             />
             <FiSearch className="search-icon" aria-hidden="true" />
-          </span>
-        </label>
+          </div>
+
+          {isSearchOpen && locationQuery.trim() !== "" && (
+            <span className="search-results" role="listbox">
+              {Array.from(
+                new Map(
+                  properties
+                    .filter(property => {
+                      const value =
+                        locationMode === "suburbs"
+                          ? property.Suburb
+                          : property.Estate;
+
+                      return value
+                        .toLowerCase()
+                        .includes(locationQuery.trim().toLowerCase());
+                    })
+                    .map(property => {
+                      const value =
+                        locationMode === "suburbs"
+                          ? property.Suburb
+                          : property.Estate;
+
+                      return [value, property];
+                    })
+                ).values()
+              )
+                .slice(0, 8)
+                .map(property => {
+                  const value =
+                    locationMode === "suburbs"
+                      ? property.Suburb
+                      : property.Estate;
+
+                  return (
+                    <button
+                      type="button"
+                      className="search-result"
+                      key={`${value}-${property.Link}`}
+                      role="option"
+                      onClick={() => {
+                        setLocationQuery(value);
+                        setIsSearchOpen(false);
+                      }}
+                    >
+                      {value}
+                    </button>
+                  );
+                })}
+
+              {properties.every(property => {
+                const value =
+                  locationMode === "suburbs"
+                    ? property.Suburb
+                    : property.Estate;
+
+                return !value
+                  .toLowerCase()
+                  .includes(locationQuery.trim().toLowerCase());
+              }) && (
+                <span className="search-result-empty">
+                  No matching locations
+                </span>
+              )}
+            </span>
+          )}
+        </div>
 
         <label className="select-field" htmlFor="region-filter">
           <span className="filter-label">Region</span>
@@ -330,11 +460,17 @@ function App() {
         </button>
       </section>
 
+      {isFiltering && (
+        <div className="filter-loading" role="status">
+          Updating packages...
+        </div>
+      )}
+
       <section className="results-grid" aria-live="polite">
-        {filteredProperties.map(property => (
+        {filteredProperties.map((property, index) => (
           <article
             className="property-card"
-            key={`${property.Lot}-${property.HomeDesign}`}
+            key={`${property.Link}-${property.Lot}-${property.HomeDesign}-${property.Orientation}-${index}`}
           >
             <div className="card-main">
               <header className="property-card-head">
@@ -389,6 +525,14 @@ function App() {
               >
                 View package
               </button>
+              <a
+                target="_blank"
+                rel="noopener noreferrer"
+                className="view-package"
+                href={property.Link}
+              >
+                View Details
+              </a>
             </footer>
           </article>
         ))}
