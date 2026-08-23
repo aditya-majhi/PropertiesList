@@ -586,12 +586,15 @@ function App() {
             </header>
 
             <div className="modal-grid">
-              {Object.entries(selectedProperty).map(([key, value]) => (
-                <div className="modal-row" key={key}>
-                  <span>{key}</span>
-                  <strong>{formatModalValue(key, value)}</strong>
-                </div>
-              ))}
+              {Object.entries(selectedProperty).map(
+                ([key, value]) =>
+                  key !== "Brochure" && (
+                    <div className="modal-row" key={key}>
+                      <span>{key}</span>
+                      <strong>{formatModalValue(key, value)}</strong>
+                    </div>
+                  )
+              )}
             </div>
           </section>
         </div>
