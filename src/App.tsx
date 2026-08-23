@@ -33,7 +33,7 @@ type RawPropertyRecord = {
   Baths: string;
   Cars: string;
   Living: string;
-  Link: string;
+  Brochure: string;
 };
 
 type PropertyRecord = {
@@ -59,7 +59,7 @@ type PropertyRecord = {
   Baths: number;
   Cars: number;
   Living: number;
-  Link: string;
+  Brochure: string;
 };
 
 type SortType = "alphabetical" | "price-low-high" | "price-high-low";
@@ -102,8 +102,22 @@ const normalizeProperty = (item: RawPropertyRecord): PropertyRecord => ({
   Baths: toNumber(item.Baths),
   Cars: toNumber(item.Cars),
   Living: toNumber(item.Living),
-  Link: item.Link,
+  Brochure: item.Brochure,
 });
+
+//Agent's Details
+const agent = {
+  name: "Josh Zammit",
+  mobile: "0430 506 092",
+  email: "josh@zammitrealestate.com.au",
+};
+
+const buildMailtoHref = (property: PropertyRecord) =>
+  `mailto:${agent.email}?subject=${encodeURIComponent(
+    `Enquiry: ${property.HomeDesign} - Lot ${property.Lot}`
+  )}&body=${encodeURIComponent(
+    `Hi ${agent.name},\n\nI'm interested in ${property.HomeDesign} (Lot ${property.Lot}, ${property.Suburb}). Please contact me with more details.`
+  )}`;
 
 function App() {
   const [properties, setProperties] = useState<PropertyRecord[]>([]);
@@ -121,6 +135,9 @@ function App() {
   const [bedsFilter, setBedsFilter] = useState("Any");
   const [statusFilter, setStatusFilter] = useState("Any");
   const [sortBy, setSortBy] = useState<SortType>("alphabetical");
+
+  const [agentModalProperty, setAgentModalProperty] =
+    useState<PropertyRecord | null>(null);
 
   useEffect(() => {
     const loadProperties = async () => {
@@ -352,7 +369,7 @@ function App() {
                     <button
                       type="button"
                       className="search-result"
-                      key={`${value}-${property.Link}`}
+                      key={`${value}-${property.Brochure}`}
                       role="option"
                       onClick={() => {
                         setLocationQuery(value);
@@ -470,7 +487,7 @@ function App() {
         {filteredProperties.map((property, index) => (
           <article
             className="property-card"
-            key={`${property.Link}-${property.Lot}-${property.HomeDesign}-${property.Orientation}-${index}`}
+            key={`${property.Brochure}-${property.Lot}-${property.HomeDesign}-${property.Orientation}-${index}`}
           >
             <div className="card-main">
               <header className="property-card-head">
@@ -525,14 +542,13 @@ function App() {
               >
                 View package
               </button>
-              <a
-                target="_blank"
-                rel="noopener noreferrer"
-                className="view-package"
-                href={property.Link}
+              <button
+                type="button"
+                className="view-package secondary"
+                onClick={() => setAgentModalProperty(property)}
               >
                 View Details
-              </a>
+              </button>
             </footer>
           </article>
         ))}
@@ -576,6 +592,78 @@ function App() {
                   <strong>{formatModalValue(key, value)}</strong>
                 </div>
               ))}
+            </div>
+          </section>
+        </div>
+      )}
+
+      {agentModalProperty !== null && (
+        <div
+          className="modal-overlay"
+          role="presentation"
+          onClick={() => setAgentModalProperty(null)}
+        >
+          <section
+            className="details-modal agent-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Agent details"
+            onClick={event => event.stopPropagation()}
+          >
+            <header className="modal-header">
+              <h3>Package Details</h3>
+              <button
+                type="button"
+                className="close-modal"
+                onClick={() => setAgentModalProperty(null)}
+              >
+                Close
+              </button>
+            </header>
+
+            <div className="agent-info">
+              <div className="agent-info-top">
+                <span className="agent-avatar" aria-hidden="true">
+                  {agent.name
+                    .split(" ")
+                    .map(part => part[0])
+                    .join("")}
+                </span>
+
+                <div>
+                  <div className="agent-info-label">Agent</div>
+                  <div className="agent-info-name">{agent.name}</div>
+                </div>
+              </div>
+
+              <div className="agent-info-grid">
+                <div className="agent-info-item">
+                  <span>Mobile:</span>
+                  <strong>{agent.mobile}</strong>
+                </div>
+                <div className="agent-info-item">
+                  <span>Email:</span>
+                  <strong>{agent.email}</strong>
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-actions">
+              <a
+                className="package-link"
+                href={agentModalProperty.Brochure}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Download brochure
+              </a>
+
+              <a
+                className="package-link secondary"
+                href={buildMailtoHref(agentModalProperty)}
+              >
+                Enquire now
+              </a>
             </div>
           </section>
         </div>
