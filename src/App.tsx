@@ -124,8 +124,6 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isFiltering, setIsFiltering] = useState(false);
-  const [selectedProperty, setSelectedProperty] =
-    useState<PropertyRecord | null>(null);
   const [locationMode, setLocationMode] = useState<"suburbs" | "estates">(
     "suburbs"
   );
@@ -537,13 +535,6 @@ function App() {
             <footer className="card-footer">
               <button
                 type="button"
-                className="view-package"
-                onClick={() => setSelectedProperty(property)}
-              >
-                View package
-              </button>
-              <button
-                type="button"
                 className="view-package secondary"
                 onClick={() => setAgentModalProperty(property)}
               >
@@ -560,45 +551,6 @@ function App() {
           </article>
         )}
       </section>
-
-      {selectedProperty !== null && (
-        <div
-          className="modal-overlay"
-          role="presentation"
-          onClick={() => setSelectedProperty(null)}
-        >
-          <section
-            className="details-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Property details"
-            onClick={event => event.stopPropagation()}
-          >
-            <header className="modal-header">
-              <h3>{selectedProperty.HomeDesign}</h3>
-              <button
-                type="button"
-                className="close-modal"
-                onClick={() => setSelectedProperty(null)}
-              >
-                Close
-              </button>
-            </header>
-
-            <div className="modal-grid">
-              {Object.entries(selectedProperty).map(
-                ([key, value]) =>
-                  key !== "Brochure" && (
-                    <div className="modal-row" key={key}>
-                      <span>{key}</span>
-                      <strong>{formatModalValue(key, value)}</strong>
-                    </div>
-                  )
-              )}
-            </div>
-          </section>
-        </div>
-      )}
 
       {agentModalProperty !== null && (
         <div
@@ -652,15 +604,6 @@ function App() {
             </div>
 
             <div className="modal-actions">
-              <a
-                className="package-link"
-                href={agentModalProperty.Brochure}
-                target="_blank"
-                rel="noreferrer"
-              >
-                Download brochure
-              </a>
-
               <a
                 className="package-link secondary"
                 href={buildMailtoHref(agentModalProperty)}
