@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FiSearch, FiInfo } from "react-icons/fi";
 import {
   FaBed,
@@ -34,6 +34,7 @@ type RawPropertyRecord = {
   Cars: string;
   Living: string;
   Brochure: string;
+  Facade: string;
 };
 
 type PropertyRecord = {
@@ -60,6 +61,7 @@ type PropertyRecord = {
   Cars: number;
   Living: number;
   Brochure: string;
+  Facade: string;
 };
 
 type SortType = "alphabetical" | "price-low-high" | "price-high-low";
@@ -103,6 +105,7 @@ const normalizeProperty = (item: RawPropertyRecord): PropertyRecord => ({
   Cars: toNumber(item.Cars),
   Living: toNumber(item.Living),
   Brochure: item.Brochure,
+  Facade: item.Facade,
 });
 
 //Agent's Details
@@ -120,6 +123,10 @@ const buildMailtoHref = (property: PropertyRecord) =>
   )}`;
 
 function App() {
+  const PAGE_SIZE = 12;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
   const [properties, setProperties] = useState<PropertyRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -151,6 +158,7 @@ function App() {
 
   useEffect(() => {
     setIsFiltering(true);
+    setVisibleCount(PAGE_SIZE);
 
     const timeoutId = window.setTimeout(() => {
       setIsFiltering(false);
@@ -172,29 +180,6 @@ function App() {
       setIsSearchOpen(true);
     }
   }, [locationQuery]);
-
-  const areas = useMemo(
-    () => ["Any region", ...new Set(properties.map(item => item.Area))],
-    [properties]
-  );
-
-  const storeyOptions = useMemo(
-    () => ["Any", ...new Set(properties.map(item => item.Storey))],
-    [properties]
-  );
-
-  const bedsOptions = useMemo(
-    () => [
-      "Any",
-      ...new Set(properties.map(item => String(item.Beds))).values(),
-    ],
-    [properties]
-  );
-
-  const statusOptions = useMemo(
-    () => ["Any", ...new Set(properties.map(item => item.Status))],
-    [properties]
-  );
 
   const filteredProperties = useMemo(() => {
     const normalizedQuery = locationQuery.trim().toLowerCase();
@@ -238,6 +223,52 @@ function App() {
     statusFilter,
     storeyFilter,
   ]);
+
+  // Loads more cards as the sentinel scrolls into view
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      entries => {
+        if (entries[0]?.isIntersecting) {
+          setVisibleCount(count => count + PAGE_SIZE);
+        }
+      },
+      { rootMargin: "400px" }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [filteredProperties.length]);
+
+  const areas = useMemo(
+    () => ["Any region", ...new Set(properties.map(item => item.Area))],
+    [properties]
+  );
+
+  const storeyOptions = useMemo(
+    () => ["Any", ...new Set(properties.map(item => item.Storey))],
+    [properties]
+  );
+
+  const bedsOptions = useMemo(
+    () => [
+      "Any",
+      ...new Set(properties.map(item => String(item.Beds))).values(),
+    ],
+    [properties]
+  );
+
+  const statusOptions = useMemo(
+    () => ["Any", ...new Set(properties.map(item => item.Status))],
+    [properties]
+  );
+
+  const visibleProperties = useMemo(
+    () => filteredProperties.slice(0, visibleCount),
+    [filteredProperties, visibleCount]
+  );
 
   const clearFilters = () => {
     setLocationMode("suburbs");
@@ -482,11 +513,18 @@ function App() {
       )}
 
       <section className="results-grid" aria-live="polite">
-        {filteredProperties.map((property, index) => (
+        {visibleProperties.map((property, index) => (
           <article
             className="property-card"
             key={`${property.Brochure}-${property.Lot}-${property.HomeDesign}-${property.Orientation}-${index}`}
           >
+            <div className="card-image">
+              <img
+                src={property.Facade}
+                alt={`${property.HomeDesign} facade`}
+                loading="lazy"
+              />
+            </div>
             <div className="card-main">
               <header className="property-card-head">
                 <h2>{property.Suburb}</h2>
@@ -551,6 +589,10 @@ function App() {
           </article>
         )}
       </section>
+
+      {visibleCount < filteredProperties.length && (
+        <div ref={sentinelRef} className="scroll-sentinel" aria-hidden="true" />
+      )}
 
       {agentModalProperty !== null && (
         <div
