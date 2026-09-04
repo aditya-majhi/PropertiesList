@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { FiSearch, FiInfo } from "react-icons/fi";
 import {
   FaBed,
@@ -70,10 +70,6 @@ const currencyFormatter = new Intl.NumberFormat("en-AU", {
   style: "currency",
   currency: "AUD",
   maximumFractionDigits: 0,
-});
-
-const numberFormatter = new Intl.NumberFormat("en-AU", {
-  maximumFractionDigits: 2,
 });
 
 const toNumber = (value: string) => {
@@ -279,15 +275,6 @@ function App() {
     setStatusFilter("Any");
     setSortBy("alphabetical");
     setIsSearchOpen(false);
-  };
-
-  const formatModalValue = (key: string, value: string | number) => {
-    if (typeof value === "number") {
-      if (key === "RentalYield") return `${numberFormatter.format(value)}%`;
-      if (key.includes("Price")) return currencyFormatter.format(value);
-      return numberFormatter.format(value);
-    }
-    return value;
   };
 
   if (isLoading) {
