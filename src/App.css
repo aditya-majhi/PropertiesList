@@ -24,7 +24,7 @@
   box-shadow: var(--shadow-sm);
   padding: 18px;
   display: grid;
-  grid-template-columns: auto minmax(250px, 1.2fr) repeat(5, minmax(120px, 0.6fr)) auto;
+  grid-template-columns: auto minmax(250px, 1.2fr) repeat(6, minmax(120px, 0.6fr)) auto;
   gap: 12px;
   align-items: end;
 }
@@ -63,7 +63,8 @@
 }
 
 .search-field,
-.select-field {
+.select-field,
+.price-range-field {
   min-width: 0;
 }
 
@@ -157,6 +158,40 @@
   background: var(--white);
   font-family: Helvetica, "Helvetica Neue", Arial, sans-serif;
   outline: 0;
+}
+
+.price-range-field {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.price-range-inputs {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  min-height: 46px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--white);
+  color: #6d8297;
+  font-size: 13px;
+}
+
+.price-range-inputs input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  padding: 0 8px;
+  color: var(--text-strong);
+  font: 17px/1 Helvetica, "Helvetica Neue", Arial, sans-serif;
+}
+
+.price-range-inputs input::-webkit-inner-spin-button,
+.price-range-inputs input::-webkit-outer-spin-button {
+  margin: 0;
 }
 
 .clear-button {

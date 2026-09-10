@@ -135,6 +135,8 @@ function App() {
   const [storeyFilter, setStoreyFilter] = useState("Any");
   const [bedsFilter, setBedsFilter] = useState("Any");
   const [statusFilter, setStatusFilter] = useState("Any");
+  const [minimumPrice, setMinimumPrice] = useState("");
+  const [maximumPrice, setMaximumPrice] = useState("");
   const [sortBy, setSortBy] = useState<SortType>("alphabetical");
 
   const [agentModalProperty, setAgentModalProperty] =
@@ -166,6 +168,8 @@ function App() {
     bedsFilter,
     locationMode,
     locationQuery,
+    maximumPrice,
+    minimumPrice,
     sortBy,
     statusFilter,
     storeyFilter,
@@ -179,6 +183,8 @@ function App() {
 
   const filteredProperties = useMemo(() => {
     const normalizedQuery = locationQuery.trim().toLowerCase();
+    const minimumPriceValue = toNumber(minimumPrice);
+    const maximumPriceValue = toNumber(maximumPrice);
 
     const filtered = properties.filter(item => {
       const locationTarget =
@@ -195,9 +201,19 @@ function App() {
       const statusMatch =
         statusFilter === "Any" ||
         item.Status.toLowerCase() === statusFilter.toLowerCase();
+      const minimumPriceMatch =
+        minimumPrice === "" || item.TotalPrice >= minimumPriceValue;
+      const maximumPriceMatch =
+        maximumPrice === "" || item.TotalPrice <= maximumPriceValue;
 
       return (
-        locationMatch && areaMatch && storeyMatch && bedsMatch && statusMatch
+        locationMatch &&
+        areaMatch &&
+        storeyMatch &&
+        bedsMatch &&
+        statusMatch &&
+        minimumPriceMatch &&
+        maximumPriceMatch
       );
     });
 
@@ -214,6 +230,8 @@ function App() {
     bedsFilter,
     locationMode,
     locationQuery,
+    maximumPrice,
+    minimumPrice,
     properties,
     sortBy,
     statusFilter,
@@ -273,6 +291,8 @@ function App() {
     setStoreyFilter("Any");
     setBedsFilter("Any");
     setStatusFilter("Any");
+    setMinimumPrice("");
+    setMaximumPrice("");
     setSortBy("alphabetical");
     setIsSearchOpen(false);
   };
@@ -474,6 +494,33 @@ function App() {
             ))}
           </select>
         </label>
+
+        <fieldset className="price-range-field">
+          <legend className="filter-label">Price range</legend>
+          <div className="price-range-inputs">
+            <input
+              id="minimum-price"
+              type="number"
+              min="0"
+              step="1000"
+              value={minimumPrice}
+              onChange={event => setMinimumPrice(event.target.value)}
+              placeholder="Min"
+              aria-label="Minimum price"
+            />
+            <span aria-hidden="true">to</span>
+            <input
+              id="maximum-price"
+              type="number"
+              min="0"
+              step="1000"
+              value={maximumPrice}
+              onChange={event => setMaximumPrice(event.target.value)}
+              placeholder="Max"
+              aria-label="Maximum price"
+            />
+          </div>
+        </fieldset>
 
         <label className="select-field" htmlFor="sort-by">
           <span className="filter-label">Sort by</span>
