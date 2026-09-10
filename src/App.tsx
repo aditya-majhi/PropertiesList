@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { FiSearch, FiInfo } from "react-icons/fi";
+import { FiSearch, FiInfo, FiPlus, FiX } from "react-icons/fi";
 import {
   FaBed,
   FaBath,
@@ -72,10 +72,19 @@ const currencyFormatter = new Intl.NumberFormat("en-AU", {
   maximumFractionDigits: 0,
 });
 
+const PRICE_OPTIONS = [
+  500000, 750000, 1000000, 1250000, 1500000, 1750000, 2000000,
+];
+
 const toNumber = (value: string) => {
   const parsed = Number.parseFloat(String(value).replace(/[^0-9.]/g, ""));
   return Number.isNaN(parsed) ? 0 : parsed;
 };
+
+const sortNumberStrings = (values: number[]) =>
+  [...new Set(values.filter(value => value > 0))]
+    .sort((a, b) => a - b)
+    .map(value => String(value));
 
 const normalizeProperty = (item: RawPropertyRecord): PropertyRecord => ({
   Area: item.Area,
@@ -126,17 +135,19 @@ function App() {
   const [properties, setProperties] = useState<PropertyRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
   const [isFiltering, setIsFiltering] = useState(false);
-  const [locationMode, setLocationMode] = useState<"suburbs" | "estates">(
-    "suburbs"
-  );
   const [locationQuery, setLocationQuery] = useState("");
-  const [areaFilter, setAreaFilter] = useState("Any region");
   const [storeyFilter, setStoreyFilter] = useState("Any");
   const [bedsFilter, setBedsFilter] = useState("Any");
+  const [maximumBedsFilter, setMaximumBedsFilter] = useState("Any");
+  const [bathsFilter, setBathsFilter] = useState("Any");
+  const [carsFilter, setCarsFilter] = useState("Any");
   const [statusFilter, setStatusFilter] = useState("Any");
   const [minimumPrice, setMinimumPrice] = useState("");
   const [maximumPrice, setMaximumPrice] = useState("");
+  const [minimumLandSize, setMinimumLandSize] = useState("");
+  const [maximumLandSize, setMaximumLandSize] = useState("");
   const [sortBy, setSortBy] = useState<SortType>("alphabetical");
 
   const [agentModalProperty, setAgentModalProperty] =
@@ -164,11 +175,14 @@ function App() {
 
     return () => window.clearTimeout(timeoutId);
   }, [
-    areaFilter,
+    bathsFilter,
     bedsFilter,
-    locationMode,
+    carsFilter,
     locationQuery,
+    maximumBedsFilter,
+    maximumLandSize,
     maximumPrice,
+    minimumLandSize,
     minimumPrice,
     sortBy,
     statusFilter,
@@ -185,19 +199,27 @@ function App() {
     const normalizedQuery = locationQuery.trim().toLowerCase();
     const minimumPriceValue = toNumber(minimumPrice);
     const maximumPriceValue = toNumber(maximumPrice);
+    const minimumBedsValue = toNumber(bedsFilter);
+    const maximumBedsValue = toNumber(maximumBedsFilter);
+    const minimumLandSizeValue = toNumber(minimumLandSize);
+    const maximumLandSizeValue = toNumber(maximumLandSize);
 
     const filtered = properties.filter(item => {
-      const locationTarget =
-        locationMode === "suburbs" ? item.Suburb : item.Estate;
       const locationMatch =
         normalizedQuery.length === 0 ||
-        locationTarget.toLowerCase().includes(normalizedQuery);
-
-      const areaMatch = areaFilter === "Any region" || item.Area === areaFilter;
+        [item.Suburb, item.Estate].some(value =>
+          value.toLowerCase().includes(normalizedQuery)
+        );
       const storeyMatch =
         storeyFilter === "Any" || item.Storey === storeyFilter;
+
       const bedsMatch =
-        bedsFilter === "Any" || String(item.Beds) === bedsFilter;
+        (bedsFilter === "Any" || item.Beds >= minimumBedsValue) &&
+        (maximumBedsFilter === "Any" || item.Beds <= maximumBedsValue);
+      const bathsMatch =
+        bathsFilter === "Any" || String(item.Baths) === bathsFilter;
+      const carsMatch =
+        carsFilter === "Any" || String(item.Cars) === carsFilter;
       const statusMatch =
         statusFilter === "Any" ||
         item.Status.toLowerCase() === statusFilter.toLowerCase();
@@ -205,15 +227,22 @@ function App() {
         minimumPrice === "" || item.TotalPrice >= minimumPriceValue;
       const maximumPriceMatch =
         maximumPrice === "" || item.TotalPrice <= maximumPriceValue;
+      const minimumLandSizeMatch =
+        minimumLandSize === "" || item.LandSize >= minimumLandSizeValue;
+      const maximumLandSizeMatch =
+        maximumLandSize === "" || item.LandSize <= maximumLandSizeValue;
 
       return (
         locationMatch &&
-        areaMatch &&
         storeyMatch &&
         bedsMatch &&
+        bathsMatch &&
+        carsMatch &&
         statusMatch &&
         minimumPriceMatch &&
-        maximumPriceMatch
+        maximumPriceMatch &&
+        minimumLandSizeMatch &&
+        maximumLandSizeMatch
       );
     });
 
@@ -226,11 +255,14 @@ function App() {
 
     return sorted;
   }, [
-    areaFilter,
+    bathsFilter,
     bedsFilter,
-    locationMode,
+    carsFilter,
     locationQuery,
+    maximumBedsFilter,
+    maximumLandSize,
     maximumPrice,
+    minimumLandSize,
     minimumPrice,
     properties,
     sortBy,
@@ -256,21 +288,31 @@ function App() {
     return () => observer.disconnect();
   }, [filteredProperties.length]);
 
-  const areas = useMemo(
-    () => ["Any region", ...new Set(properties.map(item => item.Area))],
+  const bedsOptions = useMemo(
+    () => ["Any", ...sortNumberStrings(properties.map(item => item.Beds))],
     [properties]
   );
 
   const storeyOptions = useMemo(
-    () => ["Any", ...new Set(properties.map(item => item.Storey))],
+    () => [
+      "Any",
+      ...new Set(properties.map(item => item.Storey).filter(Boolean)),
+    ],
     [properties]
   );
 
-  const bedsOptions = useMemo(
-    () => [
-      "Any",
-      ...new Set(properties.map(item => String(item.Beds))).values(),
-    ],
+  const bathsOptions = useMemo(
+    () => ["Any", ...sortNumberStrings(properties.map(item => item.Baths))],
+    [properties]
+  );
+
+  const carsOptions = useMemo(
+    () => ["Any", ...sortNumberStrings(properties.map(item => item.Cars))],
+    [properties]
+  );
+
+  const landSizeOptions = useMemo(
+    () => sortNumberStrings(properties.map(item => item.LandSize)),
     [properties]
   );
 
@@ -279,20 +321,36 @@ function App() {
     [properties]
   );
 
+  const locationSuggestions = useMemo(() => {
+    const normalizedQuery = locationQuery.trim().toLowerCase();
+    if (normalizedQuery === "") return [];
+
+    return Array.from(
+      new Set(
+        properties.flatMap(property => [property.Suburb, property.Estate])
+      )
+    )
+      .filter(value => value.toLowerCase().includes(normalizedQuery))
+      .slice(0, 8);
+  }, [locationQuery, properties]);
+
   const visibleProperties = useMemo(
     () => filteredProperties.slice(0, visibleCount),
     [filteredProperties, visibleCount]
   );
 
   const clearFilters = () => {
-    setLocationMode("suburbs");
     setLocationQuery("");
-    setAreaFilter("Any region");
     setStoreyFilter("Any");
     setBedsFilter("Any");
+    setMaximumBedsFilter("Any");
+    setBathsFilter("Any");
+    setCarsFilter("Any");
     setStatusFilter("Any");
     setMinimumPrice("");
     setMaximumPrice("");
+    setMinimumLandSize("");
+    setMaximumLandSize("");
     setSortBy("alphabetical");
     setIsSearchOpen(false);
   };
@@ -321,41 +379,8 @@ function App() {
         <h1>House &amp; Land Packages in Melbourne</h1>
       </header>
 
-      <section className="filter-strip" aria-label="Property filters">
-        <div className="filter-tabs" role="tablist" aria-label="Search by">
-          <button
-            type="button"
-            role="tab"
-            className={locationMode === "suburbs" ? "tab active" : "tab"}
-            aria-selected={locationMode === "suburbs"}
-            onClick={() => {
-              setLocationMode("suburbs");
-              setLocationQuery("");
-              setIsSearchOpen(false);
-            }}
-          >
-            Suburbs
-          </button>
-          <button
-            type="button"
-            role="tab"
-            className={locationMode === "estates" ? "tab active" : "tab"}
-            aria-selected={locationMode === "estates"}
-            onClick={() => {
-              setLocationMode("estates");
-              setLocationQuery("");
-              setIsSearchOpen(false);
-            }}
-          >
-            Estates
-          </button>
-        </div>
-
+      <section className="search-toolbar" aria-label="Property search">
         <div className="search-field">
-          <label className="filter-label" htmlFor="location-query">
-            Location
-          </label>
-
           <div className="search-input-wrap">
             <input
               id="location-query"
@@ -363,7 +388,7 @@ function App() {
               onChange={event => {
                 setLocationQuery(event.target.value);
               }}
-              placeholder="Suburb, postcode or estate"
+              placeholder="Search by suburb, postcode or address"
               autoComplete="off"
             />
             <FiSearch className="search-icon" aria-hidden="true" />
@@ -371,62 +396,22 @@ function App() {
 
           {isSearchOpen && locationQuery.trim() !== "" && (
             <span className="search-results" role="listbox">
-              {Array.from(
-                new Map(
-                  properties
-                    .filter(property => {
-                      const value =
-                        locationMode === "suburbs"
-                          ? property.Suburb
-                          : property.Estate;
+              {locationSuggestions.map(value => (
+                <button
+                  type="button"
+                  className="search-result"
+                  key={value}
+                  role="option"
+                  onClick={() => {
+                    setLocationQuery(value);
+                    setIsSearchOpen(false);
+                  }}
+                >
+                  {value}
+                </button>
+              ))}
 
-                      return value
-                        .toLowerCase()
-                        .includes(locationQuery.trim().toLowerCase());
-                    })
-                    .map(property => {
-                      const value =
-                        locationMode === "suburbs"
-                          ? property.Suburb
-                          : property.Estate;
-
-                      return [value, property];
-                    })
-                ).values()
-              )
-                .slice(0, 8)
-                .map(property => {
-                  const value =
-                    locationMode === "suburbs"
-                      ? property.Suburb
-                      : property.Estate;
-
-                  return (
-                    <button
-                      type="button"
-                      className="search-result"
-                      key={`${value}-${property.Brochure}`}
-                      role="option"
-                      onClick={() => {
-                        setLocationQuery(value);
-                        setIsSearchOpen(false);
-                      }}
-                    >
-                      {value}
-                    </button>
-                  );
-                })}
-
-              {properties.every(property => {
-                const value =
-                  locationMode === "suburbs"
-                    ? property.Suburb
-                    : property.Estate;
-
-                return !value
-                  .toLowerCase()
-                  .includes(locationQuery.trim().toLowerCase());
-              }) && (
+              {locationSuggestions.length === 0 && (
                 <span className="search-result-empty">
                   No matching locations
                 </span>
@@ -435,110 +420,250 @@ function App() {
           )}
         </div>
 
-        <label className="select-field" htmlFor="region-filter">
-          <span className="filter-label">Region</span>
-          <select
-            id="region-filter"
-            value={areaFilter}
-            onChange={event => setAreaFilter(event.target.value)}
-          >
-            {areas.map(area => (
-              <option value={area} key={area}>
-                {area}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="select-field" htmlFor="storey-filter">
-          <span className="filter-label">Storeys</span>
-          <select
-            id="storey-filter"
-            value={storeyFilter}
-            onChange={event => setStoreyFilter(event.target.value)}
-          >
-            {storeyOptions.map(option => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="select-field" htmlFor="beds-filter">
-          <span className="filter-label">Beds</span>
-          <select
-            id="beds-filter"
-            value={bedsFilter}
-            onChange={event => setBedsFilter(event.target.value)}
-          >
-            {bedsOptions.map(option => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="select-field" htmlFor="status-filter">
-          <span className="filter-label">Status</span>
-          <select
-            id="status-filter"
-            value={statusFilter}
-            onChange={event => setStatusFilter(event.target.value)}
-          >
-            {statusOptions.map(option => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <fieldset className="price-range-field">
-          <legend className="filter-label">Price range</legend>
-          <div className="price-range-inputs">
-            <input
-              id="minimum-price"
-              type="number"
-              min="0"
-              step="1000"
-              value={minimumPrice}
-              onChange={event => setMinimumPrice(event.target.value)}
-              placeholder="Min"
-              aria-label="Minimum price"
-            />
-            <span aria-hidden="true">to</span>
-            <input
-              id="maximum-price"
-              type="number"
-              min="0"
-              step="1000"
-              value={maximumPrice}
-              onChange={event => setMaximumPrice(event.target.value)}
-              placeholder="Max"
-              aria-label="Maximum price"
-            />
-          </div>
-        </fieldset>
-
-        <label className="select-field" htmlFor="sort-by">
-          <span className="filter-label">Sort by</span>
-          <select
-            id="sort-by"
-            value={sortBy}
-            onChange={event => setSortBy(event.target.value as SortType)}
-          >
-            <option value="alphabetical">Alphabetical</option>
-            <option value="price-low-high">Price: low to high</option>
-            <option value="price-high-low">Price: high to low</option>
-          </select>
-        </label>
-
-        <button type="button" className="clear-button" onClick={clearFilters}>
-          Reset
+        <button
+          type="button"
+          className="filter-toggle-button"
+          onClick={() => setIsFilterPanelOpen(true)}
+        >
+          Filter
+          <FiPlus aria-hidden="true" />
         </button>
       </section>
+
+      {isFilterPanelOpen && (
+        <div
+          className="filter-panel-overlay"
+          role="presentation"
+          onClick={() => setIsFilterPanelOpen(false)}
+        >
+          <aside
+            className="filter-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Property filters"
+            onClick={event => event.stopPropagation()}
+          >
+            <header className="filter-panel-header">
+              <h2>Filter</h2>
+              <button
+                type="button"
+                className="close-filter-panel"
+                onClick={() => setIsFilterPanelOpen(false)}
+                aria-label="Close filters"
+              >
+                <FiX aria-hidden="true" />
+              </button>
+            </header>
+
+            <div className="filter-panel-content">
+              <fieldset className="filter-group">
+                <legend>Price</legend>
+                <div className="filter-pair">
+                  <label className="select-field" htmlFor="minimum-price">
+                    <select
+                      id="minimum-price"
+                      value={minimumPrice}
+                      onChange={event => setMinimumPrice(event.target.value)}
+                    >
+                      <option value="">Min</option>
+                      {PRICE_OPTIONS.map(option => (
+                        <option key={option} value={option}>
+                          {currencyFormatter.format(option)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="select-field" htmlFor="maximum-price">
+                    <select
+                      id="maximum-price"
+                      value={maximumPrice}
+                      onChange={event => setMaximumPrice(event.target.value)}
+                    >
+                      <option value="">Max</option>
+                      {PRICE_OPTIONS.map(option => (
+                        <option key={option} value={option}>
+                          {currencyFormatter.format(option)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+              </fieldset>
+
+              <fieldset className="filter-group">
+                <legend>Bedrooms</legend>
+                <div className="filter-pair">
+                  <label className="select-field" htmlFor="minimum-beds-filter">
+                    <select
+                      id="minimum-beds-filter"
+                      value={bedsFilter}
+                      onChange={event => setBedsFilter(event.target.value)}
+                    >
+                      <option value="Any">Min</option>
+                      {bedsOptions.slice(1).map(option => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="select-field" htmlFor="maximum-beds-filter">
+                    <select
+                      id="maximum-beds-filter"
+                      value={maximumBedsFilter}
+                      onChange={event =>
+                        setMaximumBedsFilter(event.target.value)
+                      }
+                    >
+                      <option value="Any">Max</option>
+                      {bedsOptions.slice(1).map(option => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+              </fieldset>
+
+              <fieldset className="filter-group filter-group-single">
+                <legend>Storeys</legend>
+                <label className="select-field" htmlFor="storey-filter">
+                  <select
+                    id="storey-filter"
+                    value={storeyFilter}
+                    onChange={event => setStoreyFilter(event.target.value)}
+                  >
+                    {storeyOptions.map(option => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </fieldset>
+
+              <fieldset className="filter-group filter-group-single">
+                <legend>Bathrooms</legend>
+                <label className="select-field" htmlFor="baths-filter">
+                  <select
+                    id="baths-filter"
+                    value={bathsFilter}
+                    onChange={event => setBathsFilter(event.target.value)}
+                  >
+                    {bathsOptions.map(option => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </fieldset>
+
+              <fieldset className="filter-group filter-group-single">
+                <legend>Car spaces</legend>
+                <label className="select-field" htmlFor="cars-filter">
+                  <select
+                    id="cars-filter"
+                    value={carsFilter}
+                    onChange={event => setCarsFilter(event.target.value)}
+                  >
+                    {carsOptions.map(option => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </fieldset>
+
+              <fieldset className="filter-group">
+                <legend>Land size</legend>
+                <div className="filter-pair">
+                  <label className="select-field" htmlFor="minimum-land-size">
+                    <select
+                      id="minimum-land-size"
+                      value={minimumLandSize}
+                      onChange={event => setMinimumLandSize(event.target.value)}
+                    >
+                      <option value="">Min</option>
+                      {landSizeOptions.map(option => (
+                        <option key={option} value={option}>
+                          {option}m²
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="select-field" htmlFor="maximum-land-size">
+                    <select
+                      id="maximum-land-size"
+                      value={maximumLandSize}
+                      onChange={event => setMaximumLandSize(event.target.value)}
+                    >
+                      <option value="">Max</option>
+                      {landSizeOptions.map(option => (
+                        <option key={option} value={option}>
+                          {option}m²
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+              </fieldset>
+
+              <fieldset className="filter-group">
+                <legend>Status and sort</legend>
+                <div className="filter-pair">
+                  <label className="select-field" htmlFor="status-filter">
+                    <select
+                      id="status-filter"
+                      value={statusFilter}
+                      onChange={event => setStatusFilter(event.target.value)}
+                    >
+                      {statusOptions.map(option => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="select-field" htmlFor="sort-by">
+                    <select
+                      id="sort-by"
+                      value={sortBy}
+                      onChange={event =>
+                        setSortBy(event.target.value as SortType)
+                      }
+                    >
+                      <option value="alphabetical">Alphabetical</option>
+                      <option value="price-low-high">Price: low to high</option>
+                      <option value="price-high-low">Price: high to low</option>
+                    </select>
+                  </label>
+                </div>
+              </fieldset>
+            </div>
+
+            <footer className="filter-panel-actions">
+              <button
+                type="button"
+                className="clear-button"
+                onClick={clearFilters}
+              >
+                Reset
+              </button>
+              <button
+                type="button"
+                className="apply-filter-button"
+                onClick={() => setIsFilterPanelOpen(false)}
+              >
+                Show {filteredProperties.length} packages
+              </button>
+            </footer>
+          </aside>
+        </div>
+      )}
 
       {isFiltering && (
         <div className="filter-loading" role="status">
