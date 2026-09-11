@@ -8,6 +8,7 @@ import {
   FaRulerHorizontal,
   FaVectorSquare,
 } from "react-icons/fa6";
+import joshImage from "./assets/Josh.jpg";
 import "./App.css";
 
 type RawPropertyRecord = {
@@ -33,7 +34,6 @@ type RawPropertyRecord = {
   Baths: string;
   Cars: string;
   Living: string;
-  Brochure: string;
   Facade: string;
 };
 
@@ -60,7 +60,6 @@ type PropertyRecord = {
   Baths: number;
   Cars: number;
   Living: number;
-  Brochure: string;
   Facade: string;
 };
 
@@ -109,7 +108,6 @@ const normalizeProperty = (item: RawPropertyRecord): PropertyRecord => ({
   Baths: toNumber(item.Baths),
   Cars: toNumber(item.Cars),
   Living: toNumber(item.Living),
-  Brochure: item.Brochure,
   Facade: item.Facade,
 });
 
@@ -117,7 +115,7 @@ const normalizeProperty = (item: RawPropertyRecord): PropertyRecord => ({
 const agent = {
   name: "Josh Zammit",
   mobile: "0430 506 092",
-  email: "josh@zammitrealestate.com.au",
+  email: "joshua@zammitrealestate.com.au",
 };
 
 const buildMailtoHref = (property: PropertyRecord) =>
@@ -143,7 +141,7 @@ function App() {
   const [maximumBedsFilter, setMaximumBedsFilter] = useState("Any");
   const [bathsFilter, setBathsFilter] = useState("Any");
   const [carsFilter, setCarsFilter] = useState("Any");
-  const [statusFilter, setStatusFilter] = useState("Any");
+  const [statusFilter, setStatusFilter] = useState("Available");
   const [minimumPrice, setMinimumPrice] = useState("");
   const [maximumPrice, setMaximumPrice] = useState("");
   const [minimumLandSize, setMinimumLandSize] = useState("");
@@ -317,7 +315,14 @@ function App() {
   );
 
   const statusOptions = useMemo(
-    () => ["Any", ...new Set(properties.map(item => item.Status))],
+    () => [
+      "Available",
+      ...new Set(
+        properties
+          .map(item => item.Status)
+          .filter(status => status !== "Available")
+      ),
+    ],
     [properties]
   );
 
@@ -346,7 +351,7 @@ function App() {
     setMaximumBedsFilter("Any");
     setBathsFilter("Any");
     setCarsFilter("Any");
-    setStatusFilter("Any");
+    setStatusFilter("Available");
     setMinimumPrice("");
     setMaximumPrice("");
     setMinimumLandSize("");
@@ -375,10 +380,6 @@ function App() {
     </main>
   ) : (
     <main className="app-shell">
-      <header className="page-header">
-        <h1>House &amp; Land Packages in Melbourne</h1>
-      </header>
-
       <section className="search-toolbar" aria-label="Property search">
         <div className="search-field">
           <div className="search-input-wrap">
@@ -675,7 +676,7 @@ function App() {
         {visibleProperties.map((property, index) => (
           <article
             className="property-card"
-            key={`${property.Brochure}-${property.Lot}-${property.HomeDesign}-${property.Orientation}-${index}`}
+            key={`${property.Lot}-${property.HomeDesign}-${property.Orientation}-${index}`}
           >
             <div className="card-image">
               <img
@@ -703,7 +704,7 @@ function App() {
               </p>
 
               <p className="title-status">
-                {property.TitleStatus}{" "}
+                Title Status - {property.TitleStatus}{" "}
                 <FiInfo className="inline-info" aria-hidden="true" />
               </p>
 
@@ -779,12 +780,11 @@ function App() {
 
             <div className="agent-info">
               <div className="agent-info-top">
-                <span className="agent-avatar" aria-hidden="true">
-                  {agent.name
-                    .split(" ")
-                    .map(part => part[0])
-                    .join("")}
-                </span>
+                <img
+                  className="agent-avatar"
+                  src={joshImage}
+                  alt={`${agent.name} profile`}
+                />
 
                 <div>
                   <div className="agent-info-label">Agent</div>
