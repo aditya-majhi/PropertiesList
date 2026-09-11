@@ -435,7 +435,7 @@ function App() {
               onChange={event => {
                 setLocationQuery(event.target.value);
               }}
-              placeholder="Search by suburb, postcode or address"
+              placeholder="Search by suburb, postcode, estate or address"
               autoComplete="off"
             />
             <FiSearch className="search-icon" aria-hidden="true" />
@@ -737,7 +737,7 @@ function App() {
               </header>
 
               <p className="price-line">
-                <span className="price-label">Fixed price package </span>
+                <span className="price-label">Total price package </span>
                 <strong>
                   {currencyFormatter.format(property.TotalPrice)}*
                 </strong>
