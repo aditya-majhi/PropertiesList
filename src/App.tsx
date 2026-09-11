@@ -152,6 +152,33 @@ function App() {
     useState<PropertyRecord | null>(null);
 
   useEffect(() => {
+    if (window.parent === window) return;
+
+    const sendHeight = () => {
+      const height = Math.max(
+        document.body.scrollHeight,
+        document.documentElement.scrollHeight
+      );
+
+      window.parent.postMessage(
+        { type: "property-listings-height", height },
+        "*"
+      );
+    };
+
+    sendHeight();
+
+    const observer = new ResizeObserver(sendHeight);
+    observer.observe(document.body);
+    window.addEventListener("resize", sendHeight);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", sendHeight);
+    };
+  }, []);
+
+  useEffect(() => {
     const loadProperties = async () => {
       const response = await fetch("/data/data.json");
       const data = (await response.json()) as RawPropertyRecord[];

@@ -1,4 +1,39 @@
-# React + TypeScript + Vite
+# Property Listings
+
+## WordPress iframe embed
+
+Embed the deployed app with an iframe and let the app report its content height. This keeps the WordPress page from showing a nested scrollbar.
+
+```html
+<iframe
+  id="property-listings"
+  src="https://your-app-domain.com/property-listings/"
+  title="Property listings"
+  style="display:block;width:100%;height:1px;border:0;"
+></iframe>
+
+<script>
+  window.addEventListener("message", function (event) {
+    if (event.data?.type !== "property-listings-height") return;
+
+    // Restrict this to the deployed app origin in production.
+    if (event.origin !== "https://your-app-domain.com") return;
+
+    const iframe = document.getElementById("property-listings");
+    if (iframe && Number.isFinite(event.data.height)) {
+      iframe.style.height = `${Math.ceil(event.data.height)}px`;
+    }
+  });
+</script>
+```
+
+Replace both placeholder domains with the real deployed app URL. Do not set a fixed iframe height or `overflow:auto`; the iframe should grow to the height reported by the app.
+
+The script can be added through a WordPress Custom HTML block or the site theme, depending on whether that WordPress installation allows inline scripts.
+
+## Development
+
+The project is built with React, TypeScript, and Vite.
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
@@ -17,9 +52,9 @@ If you are developing a production application, we recommend updating the config
 
 ```js
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(["dist"]),
   {
-    files: ['**/*.{ts,tsx}'],
+    files: ["**/*.{ts,tsx}"],
     extends: [
       // Other configs...
 
@@ -34,42 +69,40 @@ export default defineConfig([
     ],
     languageOptions: {
       parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        project: ["./tsconfig.node.json", "./tsconfig.app.json"],
         tsconfigRootDir: import.meta.dirname,
       },
       // other options...
     },
   },
-])
-
+]);
 ```
 
 You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
 ```js
 // eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+import reactX from "eslint-plugin-react-x";
+import reactDom from "eslint-plugin-react-dom";
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(["dist"]),
   {
-    files: ['**/*.{ts,tsx}'],
+    files: ["**/*.{ts,tsx}"],
     extends: [
       // Other configs...
       // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
+      reactX.configs["recommended-typescript"],
       // Enable lint rules for React DOM
       reactDom.configs.recommended,
     ],
     languageOptions: {
       parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        project: ["./tsconfig.node.json", "./tsconfig.app.json"],
         tsconfigRootDir: import.meta.dirname,
       },
       // other options...
     },
   },
-])
-
+]);
 ```
