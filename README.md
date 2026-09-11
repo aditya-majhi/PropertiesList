@@ -16,7 +16,7 @@ Embed the deployed app with an iframe and let the app report its content height.
   window.addEventListener("message", function (event) {
     if (event.data?.type !== "property-listings-height") return;
 
-    // Restrict this to the deployed app origin in production.
+    // Replace this with the exact origin where the React app is deployed.
     if (event.origin !== "https://your-app-domain.com") return;
 
     const iframe = document.getElementById("property-listings");
@@ -28,6 +28,8 @@ Embed the deployed app with an iframe and let the app report its content height.
 ```
 
 Replace both placeholder domains with the real deployed app URL. Do not set a fixed iframe height or `overflow:auto`; the iframe should grow to the height reported by the app.
+
+If the nested scrollbar remains, the parent listener is not running or its `event.origin` check does not match the React app's actual origin. The listener must be placed on the WordPress page outside the iframe, and the iframe must use the same `id` shown above.
 
 The script can be added through a WordPress Custom HTML block or the site theme, depending on whether that WordPress installation allows inline scripts.
 

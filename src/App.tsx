@@ -154,27 +154,46 @@ function App() {
   useEffect(() => {
     if (window.parent === window) return;
 
-    const sendHeight = () => {
-      const height = Math.max(
-        document.body.scrollHeight,
-        document.documentElement.scrollHeight
-      );
+    let frameId = 0;
 
-      window.parent.postMessage(
-        { type: "property-listings-height", height },
-        "*"
-      );
+    const sendHeight = () => {
+      cancelAnimationFrame(frameId);
+      frameId = requestAnimationFrame(() => {
+        const documentElement = document.documentElement;
+        const body = document.body;
+        const height = Math.max(
+          documentElement.scrollHeight,
+          documentElement.offsetHeight,
+          body.scrollHeight,
+          body.offsetHeight
+        );
+
+        window.parent.postMessage(
+          { type: "property-listings-height", height },
+          "*"
+        );
+      });
     };
 
     sendHeight();
 
     const observer = new ResizeObserver(sendHeight);
     observer.observe(document.body);
+    const mutationObserver = new MutationObserver(sendHeight);
+    mutationObserver.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+    });
     window.addEventListener("resize", sendHeight);
+    window.addEventListener("load", sendHeight);
 
     return () => {
+      cancelAnimationFrame(frameId);
       observer.disconnect();
+      mutationObserver.disconnect();
       window.removeEventListener("resize", sendHeight);
+      window.removeEventListener("load", sendHeight);
     };
   }, []);
 
