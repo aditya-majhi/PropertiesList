@@ -63,8 +63,6 @@ type PropertyRecord = {
   Facade: string;
 };
 
-type SortType = "alphabetical" | "price-low-high" | "price-high-low";
-
 const currencyFormatter = new Intl.NumberFormat("en-AU", {
   style: "currency",
   currency: "AUD",
@@ -136,17 +134,16 @@ function App() {
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
   const [isFiltering, setIsFiltering] = useState(false);
   const [locationQuery, setLocationQuery] = useState("");
+  const [areaFilter, setAreaFilter] = useState("Any");
   const [storeyFilter, setStoreyFilter] = useState("Any");
   const [bedsFilter, setBedsFilter] = useState("Any");
   const [maximumBedsFilter, setMaximumBedsFilter] = useState("Any");
   const [bathsFilter, setBathsFilter] = useState("Any");
   const [carsFilter, setCarsFilter] = useState("Any");
-  const [statusFilter, setStatusFilter] = useState("Available");
   const [minimumPrice, setMinimumPrice] = useState("");
   const [maximumPrice, setMaximumPrice] = useState("");
   const [minimumLandSize, setMinimumLandSize] = useState("");
   const [maximumLandSize, setMaximumLandSize] = useState("");
-  const [sortBy, setSortBy] = useState<SortType>("alphabetical");
 
   const [agentModalProperty, setAgentModalProperty] =
     useState<PropertyRecord | null>(null);
@@ -219,6 +216,7 @@ function App() {
 
     return () => window.clearTimeout(timeoutId);
   }, [
+    areaFilter,
     bathsFilter,
     bedsFilter,
     carsFilter,
@@ -228,8 +226,6 @@ function App() {
     maximumPrice,
     minimumLandSize,
     minimumPrice,
-    sortBy,
-    statusFilter,
     storeyFilter,
   ]);
 
@@ -251,9 +247,10 @@ function App() {
     const filtered = properties.filter(item => {
       const locationMatch =
         normalizedQuery.length === 0 ||
-        [item.Suburb, item.Estate].some(value =>
+        [item.Suburb, item.Estate, item.Area].some(value =>
           value.toLowerCase().includes(normalizedQuery)
         );
+      const areaMatch = areaFilter === "Any" || item.Area === areaFilter;
       const storeyMatch =
         storeyFilter === "Any" || item.Storey === storeyFilter;
 
@@ -264,9 +261,7 @@ function App() {
         bathsFilter === "Any" || String(item.Baths) === bathsFilter;
       const carsMatch =
         carsFilter === "Any" || String(item.Cars) === carsFilter;
-      const statusMatch =
-        statusFilter === "Any" ||
-        item.Status.toLowerCase() === statusFilter.toLowerCase();
+      const statusMatch = item.Status.toLowerCase() === "available";
       const minimumPriceMatch =
         minimumPrice === "" || item.TotalPrice >= minimumPriceValue;
       const maximumPriceMatch =
@@ -278,6 +273,7 @@ function App() {
 
       return (
         locationMatch &&
+        areaMatch &&
         storeyMatch &&
         bedsMatch &&
         bathsMatch &&
@@ -291,14 +287,11 @@ function App() {
     });
 
     const sorted = [...filtered];
-    sorted.sort((a, b) => {
-      if (sortBy === "alphabetical") return a.Suburb.localeCompare(b.Suburb);
-      if (sortBy === "price-low-high") return a.TotalPrice - b.TotalPrice;
-      return b.TotalPrice - a.TotalPrice;
-    });
+    sorted.sort((a, b) => a.Suburb.localeCompare(b.Suburb));
 
     return sorted;
   }, [
+    areaFilter,
     bathsFilter,
     bedsFilter,
     carsFilter,
@@ -309,8 +302,6 @@ function App() {
     minimumLandSize,
     minimumPrice,
     properties,
-    sortBy,
-    statusFilter,
     storeyFilter,
   ]);
 
@@ -337,6 +328,16 @@ function App() {
     [properties]
   );
 
+  const areaOptions = useMemo(
+    () => [
+      "Any",
+      ...Array.from(
+        new Set(properties.map(item => item.Area?.trim()).filter(Boolean))
+      ).sort((a, b) => a.localeCompare(b)),
+    ],
+    [properties]
+  );
+
   const storeyOptions = useMemo(
     () => [
       "Any",
@@ -360,25 +361,17 @@ function App() {
     [properties]
   );
 
-  const statusOptions = useMemo(
-    () => [
-      "Available",
-      ...new Set(
-        properties
-          .map(item => item.Status)
-          .filter(status => status !== "Available")
-      ),
-    ],
-    [properties]
-  );
-
   const locationSuggestions = useMemo(() => {
     const normalizedQuery = locationQuery.trim().toLowerCase();
     if (normalizedQuery === "") return [];
 
     return Array.from(
       new Set(
-        properties.flatMap(property => [property.Suburb, property.Estate])
+        properties.flatMap(property => [
+          property.Suburb,
+          property.Estate,
+          property.Area,
+        ])
       )
     )
       .filter(value => value.toLowerCase().includes(normalizedQuery))
@@ -392,17 +385,16 @@ function App() {
 
   const clearFilters = () => {
     setLocationQuery("");
+    setAreaFilter("Any");
     setStoreyFilter("Any");
     setBedsFilter("Any");
     setMaximumBedsFilter("Any");
     setBathsFilter("Any");
     setCarsFilter("Any");
-    setStatusFilter("Available");
     setMinimumPrice("");
     setMaximumPrice("");
     setMinimumLandSize("");
     setMaximumLandSize("");
-    setSortBy("alphabetical");
     setIsSearchOpen(false);
   };
 
@@ -537,6 +529,23 @@ function App() {
                 </div>
               </fieldset>
 
+              <fieldset className="filter-group filter-group-single">
+                <legend>Area</legend>
+                <label className="select-field" htmlFor="area-filter">
+                  <select
+                    id="area-filter"
+                    value={areaFilter}
+                    onChange={event => setAreaFilter(event.target.value)}
+                  >
+                    {areaOptions.map(option => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </fieldset>
+
               <fieldset className="filter-group">
                 <legend>Bedrooms</legend>
                 <div className="filter-pair">
@@ -653,39 +662,6 @@ function App() {
                           {option}m²
                         </option>
                       ))}
-                    </select>
-                  </label>
-                </div>
-              </fieldset>
-
-              <fieldset className="filter-group">
-                <legend>Status and sort</legend>
-                <div className="filter-pair">
-                  <label className="select-field" htmlFor="status-filter">
-                    <select
-                      id="status-filter"
-                      value={statusFilter}
-                      onChange={event => setStatusFilter(event.target.value)}
-                    >
-                      {statusOptions.map(option => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <label className="select-field" htmlFor="sort-by">
-                    <select
-                      id="sort-by"
-                      value={sortBy}
-                      onChange={event =>
-                        setSortBy(event.target.value as SortType)
-                      }
-                    >
-                      <option value="alphabetical">Alphabetical</option>
-                      <option value="price-low-high">Price: low to high</option>
-                      <option value="price-high-low">Price: high to low</option>
                     </select>
                   </label>
                 </div>
