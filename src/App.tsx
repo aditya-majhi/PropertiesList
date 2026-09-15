@@ -142,6 +142,7 @@ function App() {
   const [carsFilter, setCarsFilter] = useState("Any");
   const [minimumPrice, setMinimumPrice] = useState("");
   const [maximumPrice, setMaximumPrice] = useState("");
+  const [priceSort, setPriceSort] = useState("low-to-high");
   const [minimumLandSize, setMinimumLandSize] = useState("");
   const [maximumLandSize, setMaximumLandSize] = useState("");
 
@@ -226,6 +227,7 @@ function App() {
     maximumPrice,
     minimumLandSize,
     minimumPrice,
+    priceSort,
     storeyFilter,
   ]);
 
@@ -287,7 +289,16 @@ function App() {
     });
 
     const sorted = [...filtered];
-    sorted.sort((a, b) => a.Suburb.localeCompare(b.Suburb));
+
+    switch (priceSort) {
+      case "high-to-low":
+        sorted.sort((a, b) => b.TotalPrice - a.TotalPrice);
+        break;
+      case "low-to-high":
+      default:
+        sorted.sort((a, b) => a.TotalPrice - b.TotalPrice);
+        break;
+    }
 
     return sorted;
   }, [
@@ -301,6 +312,7 @@ function App() {
     maximumPrice,
     minimumLandSize,
     minimumPrice,
+    priceSort,
     properties,
     storeyFilter,
   ]);
@@ -393,6 +405,7 @@ function App() {
     setCarsFilter("Any");
     setMinimumPrice("");
     setMaximumPrice("");
+    setPriceSort("low-to-high");
     setMinimumLandSize("");
     setMaximumLandSize("");
     setIsSearchOpen(false);
@@ -527,6 +540,20 @@ function App() {
                     </select>
                   </label>
                 </div>
+              </fieldset>
+
+              <fieldset className="filter-group filter-group-single">
+                <legend>Sort by price</legend>
+                <label className="select-field" htmlFor="price-sort-filter">
+                  <select
+                    id="price-sort-filter"
+                    value={priceSort}
+                    onChange={event => setPriceSort(event.target.value)}
+                  >
+                    <option value="low-to-high">Low to high</option>
+                    <option value="high-to-low">High to low</option>
+                  </select>
+                </label>
               </fieldset>
 
               <fieldset className="filter-group filter-group-single">
